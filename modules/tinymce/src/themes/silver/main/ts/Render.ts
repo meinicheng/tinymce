@@ -376,9 +376,9 @@ const setup = (editor: Editor): RenderInfo => {
     const rawUiConfig: RenderUiConfig = {
       menuItems,
 
-      menus: !editor.settings.menu ? {} : Obj.map(editor.settings.menu, (menu) => ({ ...menu, items: menu.items })),
-      menubar: editor.settings.menubar,
-      toolbar: toolbarOpt.getOrThunk(() => editor.getParam('toolbar', true)),
+      menus: Settings.getMenus(editor),
+      menubar: Settings.getMenubar(editor),
+      toolbar: toolbarOpt.getOrThunk(() => Settings.getToolbar(editor)),
       allowToolbarGroups: toolbarMode === Settings.ToolbarMode.floating,
       buttons,
 

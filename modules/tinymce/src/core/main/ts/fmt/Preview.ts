@@ -9,6 +9,7 @@ import DOMUtils from '../api/dom/DOMUtils';
 import Editor from '../api/Editor';
 import Schema from '../api/html/Schema';
 import Tools from '../api/util/Tools';
+import * as Settings from '../api/Settings';
 
 /**
  * Internal class for generating previews styles for formats.
@@ -185,9 +186,9 @@ const parseSelector = function (selector: string) {
 
 const getCssText = function (editor: Editor, format) {
   let name, previewFrag;
-  let previewCss = '', parentFontSize, previewStyles;
+  let previewCss = '', parentFontSize;
 
-  previewStyles = editor.settings.preview_styles;
+  let previewStyles: string | boolean | undefined = Settings.getPreviewStyles(editor);
 
   // No preview forced
   if (previewStyles === false) {
@@ -276,7 +277,7 @@ const getCssText = function (editor: Editor, format) {
   parentFontSize = dom.getStyle(editor.getBody(), 'fontSize', true);
   parentFontSize = /px$/.test(parentFontSize) ? parseInt(parentFontSize, 10) : 0;
 
-  each(previewStyles.split(' '), function (name) {
+  each((previewStyles as string).split(' '), (name: string) => { // Enforcing type as previewStyles may at times contain boolean. This confused typescript.
     let value = dom.getStyle(previewElm, name, true);
 
     // If background is transparent then check if the body has a background color we can use

@@ -10,7 +10,6 @@ import { Arr, Strings } from '@ephox/katamari';
 const isSkin = (ss: StyleSheet) => ss.href !== null && Strings.contains(ss.href, 'skin.min.css');
 
 UnitTest.asynctest('Skin stylesheets should be loaded in ShadowRoot when editor is in ShadowRoot', (success, failure) => {
-
   if (!ShadowDom.isSupported()) {
     return success();
   }

@@ -5,7 +5,7 @@
  * For commercial licenses see https://www.tiny.cloud/
  */
 
-import { Arr, Obj, Option, Type } from '@ephox/katamari';
+import { Arr, Option, Obj, Type } from '@ephox/katamari';
 import { Body, Element, SelectorFind } from '@ephox/sugar';
 import DOMUtils from 'tinymce/core/api/dom/DOMUtils';
 import Editor from 'tinymce/core/api/Editor';
@@ -13,9 +13,8 @@ import EditorManager from 'tinymce/core/api/EditorManager';
 import { AllowedFormat } from 'tinymce/core/api/fmt/StyleFormat';
 
 const getSkinUrl = function (editor: Editor): string {
-  const settings = editor.settings;
-  const skin = settings.skin;
-  let skinUrl = settings.skin_url;
+  const skin = editor.getParam('skin');
+  let skinUrl = editor.getParam('skin_url');
 
   if (skin !== false) {
     const skinName = skin ? skin : 'oxide';
@@ -35,8 +34,8 @@ const isSkinDisabled = (editor: Editor) => editor.getParam('skin') === false;
 
 const getHeightSetting = (editor: Editor): string | number => editor.getParam('height', Math.max(editor.getElement().offsetHeight, 200));
 const getWidthSetting = (editor: Editor): string | number => editor.getParam('width', DOMUtils.DOM.getStyle(editor.getElement(), 'width'));
-const getMinWidthSetting = (editor: Editor): Option<number> => Option.from(editor.settings.min_width).filter(Type.isNumber);
-const getMinHeightSetting = (editor: Editor): Option<number> => Option.from(editor.settings.min_height).filter(Type.isNumber);
+const getMinWidthSetting = (editor: Editor): Option<number> => Option.from(editor.getParam('min_width')).filter(Type.isNumber);
+const getMinHeightSetting = (editor: Editor): Option<number> => Option.from(editor.getParam('min_height')).filter(Type.isNumber);
 const getMaxWidthSetting = (editor: Editor): Option<number> => Option.from(editor.getParam('max_width')).filter(Type.isNumber);
 const getMaxHeightSetting = (editor: Editor): Option<number> => Option.from(editor.getParam('max_height')).filter(Type.isNumber);
 
@@ -57,9 +56,8 @@ const isToolbarEnabled = (editor: Editor): boolean => {
 
 // Convert toolbar<n> into toolbars array
 const getMultipleToolbarsSetting = (editor: Editor): Option<string[]> => {
-  const keys = Obj.keys(editor.settings);
-  const toolbarKeys = Arr.filter(keys, (key) => /^toolbar([1-9])$/.test(key));
-  const toolbars = Arr.map(toolbarKeys, (key) => editor.getParam(key, false, 'string'));
+  const potentialKeys = [ 'toolbar1', 'toolbar2', 'toolbar3', 'toolbar4', 'toolbar5', 'toolbar6', 'toolbar7', 'toolbar8', 'toolbar9' ];
+  const toolbars = Arr.map(potentialKeys, (key) => editor.getParam(key, false, 'string'));
   const toolbarArray = Arr.filter(toolbars, (toolbar) => typeof toolbar === 'string');
   return toolbarArray.length > 0 ? Option.some(toolbarArray) : Option.none();
 };
@@ -118,6 +116,25 @@ const isStickyToolbar = (editor: Editor) => {
 
 const isDraggableModal = (editor: Editor): boolean => editor.getParam('draggable_modal', false, 'boolean');
 
+const getMenus = (editor: Editor) => {
+  const menu = editor.getParam('menu');
+
+  if (menu) {
+    return Obj.map(menu, (menu) => ({ ...menu, items: menu.items }));
+  } else {
+    return {};
+  }
+};
+
+const getMenubar = (editor: Editor) => editor.getParam('menubar');
+
+export interface ToolbarGroupSetting {
+  name?: string;
+  items: string[];
+}
+
+const getToolbar = (editor: Editor): Array<string | ToolbarGroupSetting> | string | boolean => editor.getParam('toolbar', true);
+
 export {
   getSkinUrl,
   isReadOnly,
@@ -143,5 +160,8 @@ export {
   isStickyToolbar,
   getToolbarLocation,
   isToolbarLocationBottom,
-  getToolbarGroups
+  getToolbarGroups,
+  getMenus,
+  getMenubar,
+  getToolbar
 };
