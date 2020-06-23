@@ -167,9 +167,11 @@ const shouldDisableNodeChange = (editor: Editor): boolean => editor.getParam('di
 
 const isReadOnly = (editor: Editor): boolean => editor.getParam('readonly');
 
-const hasContentCssCors = (editor: Editor): boolean => getForcedRootBlock(editor) !== '';;
+const hasContentCssCors = (editor: Editor): boolean => editor.getParam('contentCssCors') !== '';
 
 const getPlugins = (editor: Editor) => editor.getParam('plugins');
+
+const getExternalPlugins = (editor: Editor) => editor.getParam('external_plugins');
 
 export {
   getIframeAttrs,
@@ -229,5 +231,6 @@ export {
   shouldDisableNodeChange,
   isReadOnly,
   hasContentCssCors,
-  getPlugins
+  getPlugins,
+  getExternalPlugins
 };

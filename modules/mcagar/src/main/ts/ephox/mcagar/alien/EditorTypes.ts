@@ -40,7 +40,7 @@ export interface Editor {
   focus: () => void;
   hasFocus: () => boolean;
   remove: () => void;
-  getParam: (key: string, defaultValue?: any, type?: string) => any;
+  getParam: <T>(key: string, defaultValue?: T, type?: string) => T;
 
   setProgressState: (state: boolean, time?: number) => void;
 

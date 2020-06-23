@@ -56,8 +56,7 @@ const isToolbarEnabled = (editor: Editor): boolean => {
 
 // Convert toolbar<n> into toolbars array
 const getMultipleToolbarsSetting = (editor: Editor): Option<string[]> => {
-  const potentialKeys = [ 'toolbar1', 'toolbar2', 'toolbar3', 'toolbar4', 'toolbar5', 'toolbar6', 'toolbar7', 'toolbar8', 'toolbar9' ];
-  const toolbars = Arr.map(potentialKeys, (key) => editor.getParam(key, false, 'string'));
+  const toolbars = Arr.range(9, (num) => editor.getParam('toolbar' + (num + 1), false, 'string'));
   const toolbarArray = Arr.filter(toolbars, (toolbar) => typeof toolbar === 'string');
   return toolbarArray.length > 0 ? Option.some(toolbarArray) : Option.none();
 };
@@ -135,6 +134,22 @@ export interface ToolbarGroupSetting {
 
 const getToolbar = (editor: Editor): Array<string | ToolbarGroupSetting> | string | boolean => editor.getParam('toolbar', true);
 
+const getFilePickerCallback = (editor: Editor) => editor.getParam('file_picker_callback');
+
+const getFilePickerTypes = (editor: Editor) => editor.getParam('file_picker_types');
+
+const getFileBrowserCallbackTypes = (editor: Editor) => editor.getParam('file_browser_callback_types');
+
+const noTypeHeadUrls = (editor: Editor) => editor.getParam('typeahead_urls') === false;
+
+const getAnchorTop = (editor: Editor): string => editor.getParam('anchor_top', '#top', 'string');
+
+const getAnchorBottom = (editor: Editor): string => editor.getParam('anchor_bottom', '#bottom', 'string');
+
+const getFilePickerValidatorHandler = (editor: Editor) => editor.getParam('file_picker_validator_handler');
+
+const getFilePickerValidatorHandlerDepricatedVersion = (editor: Editor) => editor.getParam('filepicker_validator_handler');
+
 export {
   getSkinUrl,
   isReadOnly,
@@ -163,5 +178,13 @@ export {
   getToolbarGroups,
   getMenus,
   getMenubar,
-  getToolbar
+  getToolbar,
+  getFilePickerCallback,
+  getFilePickerTypes,
+  getFileBrowserCallbackTypes,
+  noTypeHeadUrls,
+  getAnchorTop,
+  getAnchorBottom,
+  getFilePickerValidatorHandler,
+  getFilePickerValidatorHandlerDepricatedVersion
 };

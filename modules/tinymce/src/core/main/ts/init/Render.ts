@@ -100,15 +100,15 @@ const loadIcons = (scriptLoader: ScriptLoader, editor: Editor, suffix: string) =
 };
 
 const loadPlugins = (editor: Editor, suffix: string) => {
-  // These lines should be changed to a getParam and some type of setParam once such an API is available.
-  Tools.each(editor.getParam('external_plugins'), (url: string, name: string): void => {
+  Tools.each(Settings.getExternalPlugins(editor), (url: string, name: string): void => {
     PluginManager.load(name, url, Fun.noop, undefined, () => {
       ErrorReporter.pluginLoadError(editor, url, name);
     });
+    // This should be changed to some type of setParam once such an API is available.
     editor.settings.plugins += ' ' + name;
   });
 
-  Tools.each(editor.settings.plugins.split(/[ ,]/), (plugin) => {
+  Tools.each(Settings.getPlugins(editor).split(/[ ,]/), (plugin) => {
     plugin = Tools.trim(plugin);
 
     if (plugin && !PluginManager.urls[plugin]) {

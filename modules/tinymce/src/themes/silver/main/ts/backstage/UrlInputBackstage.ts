@@ -12,6 +12,7 @@ import Editor from 'tinymce/core/api/Editor';
 import Tools from 'tinymce/core/api/util/Tools';
 import { LinkTarget, LinkTargets } from '../ui/core/LinkTargets';
 import { addToHistory, getHistory } from './UrlInputHistory';
+import * as Settings from '../api/Settings';
 
 type PickerCallback = (value: string, meta: Record<string, any>) => void;
 type Picker = (callback: PickerCallback, value: string, meta: Record<string, any>) => void;
@@ -61,11 +62,11 @@ const isTruthy = (value: any) => !!value;
 
 const makeMap = (value: any): Record<string, boolean> => Obj.map(Tools.makeMap(value, /[, ]/), isTruthy);
 
-const getPicker = (editor: Editor): Option<Picker> => Option.from(editor.getParam('file_picker_callback')).filter(Type.isFunction) as Option<Picker>;
+const getPicker = (editor: Editor): Option<Picker> => Option.from(Settings.getFilePickerCallback(editor)).filter(Type.isFunction) as Option<Picker>;
 
 const getPickerTypes = (editor: Editor): boolean | Record<string, boolean> => {
-  const optFileTypes = Option.from(editor.getParam('file_picker_types'));
-  const optLegacyTypes = Option.from(editor.getParam('file_browser_callback_types'));
+  const optFileTypes = Option.some(Settings.getFilePickerTypes(editor)).filter(isTruthy);;
+  const optLegacyTypes = Option.some(Settings.getFileBrowserCallbackTypes(editor)).filter(isTruthy);;
   const optTypes = optFileTypes.or(optLegacyTypes).map(makeMap);
   return getPicker(editor).fold(
     () => false,
@@ -105,20 +106,20 @@ const getUrlPicker = (editor: Editor, filetype: string): Option<UrlPicker> => ge
 }));
 
 export const getLinkInformation = (editor: Editor): Option<LinkInformation> => {
-  if (editor.getParam('typeahead_urls') === false) {
+  if (Settings.noTypeHeadUrls(editor)) {
     return Option.none();
   }
 
   return Option.some({
     targets: LinkTargets.find(editor.getBody()),
-    anchorTop: editor.getParam('anchor_top', '#top', 'string'),
-    anchorBottom: editor.getParam('anchor_bottom', '#bottom', 'string')
+    anchorTop: Settings.getAnchorTop(editor),
+    anchorBottom: Settings.getAnchorBottom(editor)
   });
 };
 
 export const getValidationHandler = (editor: Editor): Option<UrlValidationHandler> => {
-  const optValidator = Option.from(editor.getParam('file_picker_validator_handler')).filter(Type.isFunction);
-  return optValidator.orThunk(() => Option.from(editor.getParam('filepicker_validator_handler')).filter(Type.isFunction));
+  const optValidator = Option.from(Settings.getFilePickerValidatorHandler(editor)).filter(Type.isFunction);
+  return optValidator.orThunk(() => Option.from(Settings.getFilePickerValidatorHandlerDepricatedVersion(editor)).filter(Type.isFunction));
 };
 
 export const getUrlPickerTypes = (editor: Editor): boolean | Record<string, boolean> => getPickerTypes(editor);
