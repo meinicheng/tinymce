@@ -122,7 +122,7 @@ const mkSerializerSettings = (editor: Editor): SerializerSettings => {
       valid_elements: settings.valid_elements,
       valid_styles: settings.valid_styles,
       verify_html: settings.verify_html,
-      whitespace_elements: settings.whitespace_elements,
+      whitespace_elements: settings.whitespace_elements
     })
   };
 };
@@ -168,11 +168,11 @@ const createParser = function (editor: Editor): DomParser {
 
   // Keep scripts from executing
   parser.addNodeFilter('script', function (nodes: Node[]) {
-    let i = nodes.length, node, type;
+    let i = nodes.length;
 
     while (i--) {
-      node = nodes[i];
-      type = node.attr('type') || 'no/type';
+      const node = nodes[i];
+      const type = node.attr('type') || 'no/type';
       if (type.indexOf('mce-') !== 0) {
         node.attr('type', 'mce-' + type);
       }
@@ -181,10 +181,10 @@ const createParser = function (editor: Editor): DomParser {
 
   if (editor.settings.preserve_cdata) {
     parser.addNodeFilter('#cdata', function (nodes: Node[]) {
-      let i = nodes.length, node;
+      let i = nodes.length;
 
       while (i--) {
-        node = nodes[i];
+        const node = nodes[i];
         node.type = 8;
         node.name = '#comment';
         node.value = '[CDATA[' + editor.dom.encode(node.value) + ']]';
@@ -193,11 +193,11 @@ const createParser = function (editor: Editor): DomParser {
   }
 
   parser.addNodeFilter('p,h1,h2,h3,h4,h5,h6,div', function (nodes: Node[]) {
-    let i = nodes.length, node;
+    let i = nodes.length;
     const nonEmptyElements = editor.schema.getNonEmptyElements();
 
     while (i--) {
-      node = nodes[i];
+      const node = nodes[i];
 
       if (node.isEmpty(nonEmptyElements) && node.getAll('br').length === 0) {
         node.append(new Node('br', 1)).shortEnded = true;
@@ -334,7 +334,7 @@ const preInit = (editor: Editor, rtcMode: boolean) => {
 const initContentBody = function (editor: Editor, skipWrite?: boolean) {
   const settings = editor.settings;
   const targetElm = editor.getElement();
-  let doc = editor.getDoc(), body;
+  let doc = editor.getDoc();
 
   // Restore visibility on target element
   if (!settings.inline) {
@@ -349,14 +349,6 @@ const initContentBody = function (editor: Editor, skipWrite?: boolean) {
   }
 
   if (editor.inline) {
-    editor.on('remove', function () {
-      const bodyEl = this.getBody();
-
-      DOM.removeClass(bodyEl, 'mce-content-body');
-      DOM.removeClass(bodyEl, 'mce-edit-focus');
-      DOM.setAttrib(bodyEl, 'contentEditable', null);
-    });
-
     DOM.addClass(targetElm, 'mce-content-body');
     editor.contentDocument = doc = document;
     editor.contentWindow = window;
@@ -365,8 +357,10 @@ const initContentBody = function (editor: Editor, skipWrite?: boolean) {
   }
 
   // It will not steal focus while setting contentEditable
-  body = editor.getBody();
-  body.disabled = true;
+  const body = editor.getBody();
+  // disabled isn't valid on all body elements, so need to cast here
+  // TODO: See if we actually need to disable/re-enable here
+  (body as any).disabled = true;
   editor.readonly = !!settings.readonly;
 
   if (!editor.readonly) {
@@ -377,7 +371,7 @@ const initContentBody = function (editor: Editor, skipWrite?: boolean) {
     body.contentEditable = editor.getParam('content_editable_state', true);
   }
 
-  body.disabled = false;
+  (body as any).disabled = false;
 
   editor.editorUpload = EditorUpload(editor);
   editor.schema = Schema(settings);

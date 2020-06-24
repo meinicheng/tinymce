@@ -34,7 +34,7 @@ interface Transformer {
 
 const tryEmailTransform = (data: LinkDialogOutput): Option<Transformer> => {
   const url = data.href;
-  const suggestMailTo = url.indexOf('@') > 0 && url.indexOf('//') === -1 && url.indexOf('mailto:') === -1;
+  const suggestMailTo = url.indexOf('@') > 0 && url.indexOf('/') === -1 && url.indexOf('mailto:') === -1;
   return suggestMailTo ? Option.some({
     message: 'The URL you entered seems to be an email address. Do you want to add the required mailto: prefix?',
     preprocess: (oldData) => ({ ...oldData, href: 'mailto:' + url })
@@ -55,7 +55,7 @@ const tryProtocolTransform = (assumeExternalTargets: AssumeExternalTargets, defa
 };
 
 const preprocess = (editor: Editor, data: LinkDialogOutput): Promise<LinkDialogOutput> => Arr.findMap(
-  [ tryEmailTransform, tryProtocolTransform(Settings.assumeExternalTargets(editor),  Settings.getDefaultLinkProtocol(editor)) ],
+  [ tryEmailTransform, tryProtocolTransform(Settings.assumeExternalTargets(editor), Settings.getDefaultLinkProtocol(editor)) ],
   (f) => f(data)
 ).fold(
   () => Promise.resolve(data),

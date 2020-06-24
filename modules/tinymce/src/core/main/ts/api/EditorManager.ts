@@ -5,7 +5,7 @@
  * For commercial licenses see https://www.tiny.cloud/
  */
 
-import { BeforeUnloadEvent, document, Element, HTMLFormElement, Window } from '@ephox/dom-globals';
+import { BeforeUnloadEvent, document, HTMLElement, HTMLFormElement, Window } from '@ephox/dom-globals';
 import { Arr, Obj, Type } from '@ephox/katamari';
 import * as ErrorReporter from '../ErrorReporter';
 import * as FocusController from '../focus/FocusController';
@@ -322,14 +322,12 @@ const EditorManager: EditorManager = {
    * @param {Object} defaultSettings Defaults settings object.
    */
   overrideDefaults(defaultSettings) {
-    let baseUrl, suffix;
-
-    baseUrl = defaultSettings.base_url;
+    const baseUrl = defaultSettings.base_url;
     if (baseUrl) {
       this._setBaseUrl(baseUrl);
     }
 
-    suffix = defaultSettings.suffix;
+    const suffix = defaultSettings.suffix;
     if (defaultSettings.suffix) {
       this.suffix = suffix;
     }
@@ -365,37 +363,26 @@ const EditorManager: EditorManager = {
    *    ...
    * });
    */
-  init(settings) {
+  init(settings: RawEditorSettings) {
     const self: EditorManager = this;
-    let result, invalidInlineTargets;
+    let result;
 
-    invalidInlineTargets = Tools.makeMap(
+    const invalidInlineTargets = Tools.makeMap(
       'area base basefont br col frame hr img input isindex link meta param embed source wbr track ' +
       'colgroup option table tbody tfoot thead tr th td script noscript style textarea video audio iframe object menu',
       ' '
     );
 
-    const isInvalidInlineTarget = function (settings, elm) {
-      return settings.inline && elm.tagName.toLowerCase() in invalidInlineTargets;
-    };
+    const isInvalidInlineTarget = (settings: RawEditorSettings, elm: HTMLElement) =>
+      settings.inline && elm.tagName.toLowerCase() in invalidInlineTargets;
 
-    const createId = function (elm) {
+    const createId = (elm: HTMLElement & { name?: string }): string => {
       let id = elm.id;
 
-      // Use element id, or unique name or generate a unique id
       if (!id) {
-        id = elm.name;
-
-        if (id && !DOM.get(id)) {
-          id = elm.name;
-        } else {
-          // Generate unique name
-          id = DOM.uniqueId();
-        }
-
+        id = Obj.get(elm, 'name').filter((name) => !DOM.get(name)).getOrThunk(DOM.uniqueId);
         elm.setAttribute('id', id);
       }
-
       return id;
     };
 
@@ -413,8 +400,8 @@ const EditorManager: EditorManager = {
       return className.constructor === RegExp ? className.test(elm.className) : DOM.hasClass(elm, className);
     };
 
-    const findTargets = function (settings): Element[] {
-      let l, targets = [];
+    const findTargets = (settings: RawEditorSettings): HTMLElement[] => {
+      let targets: HTMLElement[] = [];
 
       if (Env.browser.isIE() && Env.browser.version.major < 11) {
         ErrorReporter.initError(
@@ -445,13 +432,13 @@ const EditorManager: EditorManager = {
       // Fallback to old setting
       switch (settings.mode) {
         case 'exact':
-          l = settings.elements || '';
+          const l = settings.elements || '';
 
           if (l.length > 0) {
             each(explode(l), function (id) {
-              let elm;
+              const elm = DOM.get(id);
 
-              if ((elm = DOM.get(id))) {
+              if (elm) {
                 targets.push(elm);
               } else {
                 each(document.forms, function (f: HTMLFormElement) {
@@ -492,11 +479,10 @@ const EditorManager: EditorManager = {
     const initEditors = function () {
       let initCount = 0;
       const editors = [];
-      let targets: Element[];
+      let targets: HTMLElement[];
 
-      const createEditor = function (id, settings, targetElm) {
+      const createEditor = function (id: string, settings: RawEditorSettings, targetElm: HTMLElement) {
         const editor: Editor = new Editor(id, settings, self);
-
         editors.push(editor);
 
         editor.on('init', function () {
@@ -517,7 +503,7 @@ const EditorManager: EditorManager = {
       // TODO: Deprecate this one
       if (settings.types) {
         each(settings.types, function (type) {
-          Tools.each(targets, function (elm) {
+          Tools.each(targets, function (elm: HTMLElement) {
             if (DOM.is(elm, type.selector)) {
               createEditor(createId(elm), extend({}, settings, type), elm);
               return false;
@@ -610,11 +596,10 @@ const EditorManager: EditorManager = {
    */
   add(editor) {
     const self: EditorManager = this;
-    let existingEditor;
 
-    // Prevent existing editors from beeing added again this could happen
+    // Prevent existing editors from being added again this could happen
     // if a user calls createEditor then render or add multiple times.
-    existingEditor = legacyEditors[editor.id];
+    const existingEditor = legacyEditors[editor.id];
     if (existingEditor === editor) {
       return editor;
     }

@@ -7,7 +7,7 @@
 
 import { Arr, Fun, Option } from '@ephox/katamari';
 import {
-  CellMutations, TableDirection, TableFill, TableGridSize, TableOperations, RunOperation
+  CellMutations, TableDirection, TableFill, TableGridSize, TableOperations, RunOperation, ResizeWire
 } from '@ephox/snooker';
 import { Element, Node } from '@ephox/sugar';
 
@@ -19,10 +19,10 @@ import Editor from 'tinymce/core/api/Editor';
 import { DomDescent } from '@ephox/phoenix';
 import { HTMLTableElement, Range } from '@ephox/dom-globals';
 
-export type BasicTableAction<T extends RunOperation.CombinedTargets = RunOperation.CombinedTargets> = (table: Element<HTMLTableElement>, target: T) => Option<Range>;
-export type PasteTableAction<T extends RunOperation.TargetPaste = RunOperation.TargetPaste> = (table: Element<HTMLTableElement>, target: T) => Option<Range>;
-export type AdvancedPasteTableAction<T extends RunOperation.TargetPasteRows = RunOperation.TargetPasteRows> = (table: Element<HTMLTableElement>, target: T) => Option<Range>;
-export type GetterTableAction<T extends RunOperation.CombinedTargets = RunOperation.CombinedTargets> = (table: Element<HTMLTableElement>, target: T) => string;
+type TableAction<T> = (table: Element<HTMLTableElement>, target: T) => Option<Range>;
+export type BasicTableAction = TableAction<RunOperation.CombinedTargets>;
+export type PasteTableAction = TableAction<RunOperation.TargetPaste>;
+export type AdvancedPasteTableAction = TableAction<RunOperation.TargetPasteRows>;
 
 export interface TableActions {
   deleteRow: BasicTableAction;
@@ -41,41 +41,34 @@ export interface TableActions {
   tableCellType: BasicTableAction; // TODO from here
   tableRowType: BasicTableAction;
   tableColumnType: BasicTableAction;
-  getTableRowType: GetterTableAction;
-  getTableCellType: GetterTableAction;
-  getTableColType: GetterTableAction;
+  // getTableRowType: GetterTableAction;
+  // getTableCellType: GetterTableAction;
+  // getTableColType: GetterTableAction;
 }
 
-export const TableActions = function (editor: Editor, lazyWire): TableActions {
-  const isTableBody = function (editor: Editor) {
-    return Node.name(Util.getBody(editor)) === 'table';
-  };
+export const TableActions = (editor: Editor, lazyWire: () => ResizeWire): TableActions => {
+  const isTableBody = (editor: Editor) => Node.name(Util.getBody(editor)) === 'table';
 
-  const lastRowGuard = function (table) {
-    const size = TableGridSize.getGridSize(table);
-    return isTableBody(editor) === false || size.rows() > 1;
-  };
+  const lastRowGuard = (table: Element<HTMLTableElement>) => isTableBody(editor) === false || TableGridSize.getGridSize(table).rows() > 1;
 
-  const lastColumnGuard = function (table: Element<HTMLTableElement>) {
-    const size = TableGridSize.getGridSize(table);
-    return isTableBody(editor) === false || size.columns() > 1;
-  };
+  const lastColumnGuard = (table: Element<HTMLTableElement>) =>
+    isTableBody(editor) === false || TableGridSize.getGridSize(table).columns() > 1;
 
   // Option.none gives the default cloneFormats.
   const cloneFormats = getCloneElements(editor);
 
-  const execute = function <T>(operation: RunOperation.OperationCallback<T>, guard, mutate, lazyWire) {
-    return function (table: Element<HTMLTableElement>, target: T): Option<Range> {
+  const execute = <T> (operation: RunOperation.OperationCallback<T>, guard, mutate, lazyWire) =>
+    (table: Element<HTMLTableElement>, target: T): Option<Range> => {
       Util.removeDataStyle(table);
       const wire = lazyWire();
       const doc = Element.fromDom(editor.getDoc());
       const direction = TableDirection(Direction.directionAt);
       const generators = TableFill.cellOperations(mutate, doc, cloneFormats);
-      return guard(table) ? operation(wire, table, target, generators, direction).bind(function (result) {
-        Arr.each(result.newRows(), function (row) {
+      return guard(table) ? operation(wire, table, target, generators, direction).bind((result) => {
+        Arr.each(result.newRows(), (row) => {
           fireNewRow(editor, row.dom());
         });
-        Arr.each(result.newCells(), function (cell) {
+        Arr.each(result.newCells(), (cell) => {
           fireNewCell(editor, cell.dom());
         });
         return result.cursor().map((cell) => {
@@ -87,7 +80,6 @@ export const TableActions = function (editor: Editor, lazyWire): TableActions {
         });
       }) : Option.none();
     };
-  };
 
   const deleteRow = execute(TableOperations.eraseRows, lastRowGuard, Fun.noop, lazyWire);
 
@@ -116,12 +108,12 @@ export const TableActions = function (editor: Editor, lazyWire): TableActions {
   const pasteCells = execute(TableOperations.pasteCells, Fun.always, Fun.noop, lazyWire);
 
   // TODO
-  const tableCellType = (_table, _target) => { return Option.none<Range>(); };
-  const tableRowType = (_table, _target) => { return Option.none<Range>(); };
-  const tableColumnType = (_table, _target) => { return Option.none<Range>(); };
-  const getTableRowType = (_table, _target) => '';
-  const getTableCellType = (_table, _target) => '';
-  const getTableColType = (_table, _target) => '';
+  const tableCellType = (_table, _target) => Option.none<Range>();
+  const tableRowType = (_table, _target) => Option.none<Range>();
+  const tableColumnType = (_table, _target) => Option.none<Range>();
+  // const getTableRowType = (_table, _target) => '';
+  // const getTableCellType = (_table, _target) => '';
+  // const getTableColType = (_table, _target) => '';
 
   return {
     deleteRow,
@@ -137,11 +129,11 @@ export const TableActions = function (editor: Editor, lazyWire): TableActions {
     pasteRowsBefore,
     pasteRowsAfter,
     pasteCells,
-    tableCellType, 
+    tableCellType,
     tableRowType,
-    tableColumnType,
-    getTableRowType,
-    getTableCellType,
-    getTableColType
+    tableColumnType
+    // getTableRowType,
+    // getTableCellType,
+    // getTableColType
   };
 };

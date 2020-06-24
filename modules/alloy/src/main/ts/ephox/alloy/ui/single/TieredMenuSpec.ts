@@ -41,10 +41,8 @@ const make: SingleSketchFactory<TieredMenuDetail, TieredMenuSpec> = (detail, _ra
   const buildMenus = (container: AlloyComponent, primaryName: string, menus: Record<string, PartialMenuSpec>): Record<string, MenuPreparation> => Obj.map(menus, (spec, name) => {
 
     const makeSketch = () => Menu.sketch({
-      dom: spec.dom,
       ...spec,
       value: name,
-      items: spec.items,
       markers: detail.markers,
 
       // Fake focus.
@@ -165,7 +163,7 @@ const make: SingleSketchFactory<TieredMenuDetail, TieredMenuSpec> = (detail, _ra
     }
   };
 
-  const expandRight = (container: AlloyComponent, item: AlloyComponent, decision: ExpandHighlightDecision  = ExpandHighlightDecision.HighlightSubmenu): Option<AlloyComponent> => {
+  const expandRight = (container: AlloyComponent, item: AlloyComponent, decision: ExpandHighlightDecision = ExpandHighlightDecision.HighlightSubmenu): Option<AlloyComponent> => {
     const value = getItemValue(item);
     return layeredState.expand(value).bind((path) => {
       // Called when submenus are opened by keyboard AND hovering navigation

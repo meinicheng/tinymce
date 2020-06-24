@@ -5,9 +5,9 @@
  * For commercial licenses see https://www.tiny.cloud/
  */
 
-import { navigator } from '@ephox/dom-globals';
+import { navigator, Document as DomDocument, Node as DomNode, ShadowRoot } from '@ephox/dom-globals';
 import { Arr, Fun, Future, Futures, Result, Results } from '@ephox/katamari';
-import { Attr, Element } from '@ephox/sugar';
+import { Attr, Element, Insert, ShadowDom, Traverse } from '@ephox/sugar';
 import { ReferrerPolicy } from '../SettingsTypes';
 import Delay from '../util/Delay';
 import Tools from '../util/Tools';
@@ -31,19 +31,21 @@ export interface StyleSheetLoaderSettings {
   referrerPolicy: ReferrerPolicy;
 }
 
-export function StyleSheetLoader(document, settings: Partial<StyleSheetLoaderSettings> = {}): StyleSheetLoader {
+export function StyleSheetLoader(documentOrShadowRoot: DomDocument | ShadowRoot, settings: Partial<StyleSheetLoaderSettings> = {}): StyleSheetLoader {
   let idCount = 0;
   const loadedStates = {};
-  let maxLoadTime;
 
-  maxLoadTime = settings.maxLoadTime || 5000;
+  const edos = Element.fromDom(documentOrShadowRoot);
+  const doc = Traverse.documentOrOwner(edos);
+
+  const maxLoadTime = settings.maxLoadTime || 5000;
 
   const _setReferrerPolicy = (referrerPolicy: ReferrerPolicy) => {
     settings.referrerPolicy = referrerPolicy;
   };
 
-  const appendToHead = function (node) {
-    document.getElementsByTagName('head')[0].appendChild(node);
+  const addStyle = (element: Element<DomNode>) => {
+    Insert.append(ShadowDom.getStyleContainer(edos), element);
   };
 
   /**
@@ -55,7 +57,7 @@ export function StyleSheetLoader(document, settings: Partial<StyleSheetLoaderSet
    * @param {Function} errorCallback Callback to be executed when failed loading.
    */
   const load = function (url: string, loadedCallback: Function, errorCallback?: Function) {
-    let link, style, startTime, state;
+    let link, style, state;
 
     const resolve = (status: number) => {
       state.status = status;
@@ -113,7 +115,7 @@ export function StyleSheetLoader(document, settings: Partial<StyleSheetLoaderSet
     // Or WebKit that fires the onload event before the StyleSheet is added to the document
     const waitForWebKitLinkLoaded = function () {
       wait(function () {
-        const styleSheets = document.styleSheets;
+        const styleSheets = documentOrShadowRoot.styleSheets;
         let styleSheet, i = styleSheets.length, owner;
 
         while (i--) {
@@ -181,13 +183,14 @@ export function StyleSheetLoader(document, settings: Partial<StyleSheetLoaderSet
 
     // Start loading
     state.status = 1;
-    link = document.createElement('link');
+    // TODO: Use Sugar to create this element
+    link = doc.dom().createElement('link');
     link.rel = 'stylesheet';
     link.type = 'text/css';
     link.id = 'u' + (idCount++);
     link.async = false;
     link.defer = false;
-    startTime = new Date().getTime();
+    const startTime = new Date().getTime();
 
     if (settings.contentCssCors) {
       link.crossOrigin = 'anonymous';
@@ -206,10 +209,11 @@ export function StyleSheetLoader(document, settings: Partial<StyleSheetLoaderSet
       // Sniff for old Firefox that doesn't support the onload event on link elements
       // TODO: Remove this in the future when everyone uses modern browsers
       if (navigator.userAgent.indexOf('Firefox') > 0) {
-        style = document.createElement('style');
+        // TODO: Use Sugar to create this element
+        style = doc.dom().createElement('style');
         style.textContent = '@import "' + url + '"';
         waitForGeckoLinkLoaded();
-        appendToHead(style);
+        addStyle(Element.fromDom(style));
         return;
       }
 
@@ -217,7 +221,7 @@ export function StyleSheetLoader(document, settings: Partial<StyleSheetLoaderSet
       waitForWebKitLinkLoaded();
     }
 
-    appendToHead(link);
+    addStyle(Element.fromDom(link));
     link.href = url;
   };
 

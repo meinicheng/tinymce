@@ -42,11 +42,12 @@ export interface TargetUnmergable {
 }
 
 // combines the above 4 interfaces because this is what data we actually get from TinyMCE
-export interface CombinedTargets {
+export interface CombinedTargets extends TargetElement, TargetSelection, TargetMergable, TargetUnmergable { };
+
+export interface TargetPaste {
   readonly element: () => Element;
-  readonly mergable: () => Option<any>;
-  readonly unmergable: () => Option<any>;
-  readonly selection: () => Element[];
+  readonly generators: () => SimpleGenerators;
+  readonly clipboard: () => Element;
 }
 
 export interface TargetPasteRows {
@@ -59,12 +60,6 @@ export interface TargetPasteRows {
 export interface CombinedPasteRowsTargets extends CombinedTargets {
   readonly generators: () => SimpleGenerators;
   readonly clipboard: () => Element[];
-}
-
-export interface TargetPaste {
-  readonly element: () => Element;
-  readonly generators: () => SimpleGenerators;
-  readonly clipboard: () => Element;
 }
 
 export interface ExtractMergable {

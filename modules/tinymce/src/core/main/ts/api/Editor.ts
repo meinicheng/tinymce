@@ -47,6 +47,7 @@ import I18n, { TranslatedString, Untranslated } from './util/I18n';
 import Tools from './util/Tools';
 import URI from './util/URI';
 import WindowManager from './WindowManager';
+import { StyleSheetLoader } from './dom/StyleSheetLoader';
 
 /**
  * This class contains the core logic for a TinyMCE editor.
@@ -70,6 +71,8 @@ import WindowManager from './WindowManager';
 
 export interface Ui {
   registry: Registry.Registry;
+  /** StyleSheetLoader for styles in the editor UI. For content styles, use editor.dom.styleSheetLoader. */
+  styleSheetLoader: StyleSheetLoader;
 }
 
 export interface EditorConstructor {
@@ -185,7 +188,12 @@ class Editor implements EditorObservable {
   public mode: Mode;
 
   /**
+   * Sets the editor mode. For example: "design", "code" or "readonly".
+   * <br>
+   * <em>Deprecated in TinyMCE 5.0.4</em> - Use <code>editor.mode.set(mode)</code> instead.
    *
+   * @method setMode
+   * @param {String} mode Mode to set the editor in.
    * @deprecated now an alias for editor.mode.set()
    */
   public setMode: (mode: string) => void;
@@ -325,7 +333,8 @@ class Editor implements EditorObservable {
     }
 
     this.ui = {
-      registry: registry()
+      registry: registry(),
+      styleSheetLoader: undefined
     };
 
     const self = this;
@@ -436,7 +445,7 @@ class Editor implements EditorObservable {
   public getParam <K extends keyof ParamTypeMap>(name: string, defaultVal: ParamTypeMap[K], type: K): ParamTypeMap[K];
   public getParam <K extends keyof EditorSettings>(name: K, defaultVal?: EditorSettings[K], type?: string): EditorSettings[K];
   public getParam <T>(name: string, defaultVal: T, type: string): T;
-  public getParam(name: string, defaultVal?: any, type?: string): any  {
+  public getParam(name: string, defaultVal?: any, type?: string): any {
     return getParam(this, name, defaultVal, type);
   }
 

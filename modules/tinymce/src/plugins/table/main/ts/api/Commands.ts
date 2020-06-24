@@ -11,7 +11,7 @@ import { CopyCols, CopyRows, TableFill, TableLookup } from '@ephox/snooker';
 import { Element, Insert, Remove, Replication } from '@ephox/sugar';
 import Editor from 'tinymce/core/api/Editor';
 import { insertTableWithDataValidation } from '../actions/InsertTable';
-import { TableActions, GetterTableAction, BasicTableAction, AdvancedPasteTableAction } from '../actions/TableActions';
+import { TableActions, BasicTableAction, AdvancedPasteTableAction } from '../actions/TableActions';
 import * as Util from '../alien/Util';
 import { Clipboard } from '../core/Clipboard';
 import * as TableTargets from '../queries/TableTargets';
@@ -58,12 +58,12 @@ const registerCommands = (editor: Editor, actions: TableActions, cellSelection: 
     });
   });
 
-  const getFromSelection = (execute: GetterTableAction): string => TableSelection.getSelectionStartCell(editor).bind((cell) => {
-    return getTableFromCell(cell).map((table) => {
-      const targets = TableTargets.forMenu(selections, table, cell);
-      return execute(table, targets);
-    });
-  }).getOr(''); // TODO better fallback?
+  // const getFromSelection = (execute: GetterTableAction): string => TableSelection.getSelectionStartCell(editor).bind((cell) => {
+  //   return getTableFromCell(cell).map((table) => {
+  //     const targets = TableTargets.forMenu(selections, table, cell);
+  //     return execute(table, targets);
+  //   });
+  // }).getOr(''); // TODO better fallback?
 
   const copyRowSelection = () => TableSelection.getSelectionStartCell(editor).map((cell) =>
     getTableFromCell(cell).bind((table) => {
@@ -82,7 +82,7 @@ const registerCommands = (editor: Editor, actions: TableActions, cellSelection: 
     // If we have clipboard rows to paste
     getRows().each((rows) => {
       const clonedRows = Arr.map(rows, (row) => Replication.deep(row));
-      TableSelection.getSelectionStartCell(editor).each((cell) => {
+      TableSelection.getSelectionStartCell(editor).each((cell) =>
         getTableFromCell(cell).each((table) => {
           const generators = TableFill.paste(Element.fromDom(editor.getDoc()));
           const targets = TableTargets.pasteRows(selections, table, cell, clonedRows, generators);
@@ -91,8 +91,8 @@ const registerCommands = (editor: Editor, actions: TableActions, cellSelection: 
             editor.focus();
             cellSelection.clear(table);
           });
-        });
-      });
+        })
+      );
     });
 
   // Register action commands
@@ -120,17 +120,16 @@ const registerCommands = (editor: Editor, actions: TableActions, cellSelection: 
     mceTablePasteRowBefore: (_grid) => pasteOnSelection(actions.pasteRowsBefore, clipboard.getRows),
     mceTablePasteRowAfter: (_grid) => pasteOnSelection(actions.pasteRowsAfter, clipboard.getRows),
     mceTableDelete: eraseTable,
-    mceTableCellType: () => actOnSelection(actions.tableCellType), 
+    mceTableCellType: () => actOnSelection(actions.tableCellType),
     mceTableRowType: () => actOnSelection(actions.tableRowType),
-    mceTableColumnType: () => actOnSelection(actions.tableColumnType),
-
+    mceTableColumnType: () => actOnSelection(actions.tableColumnType)
   }, (func, name) => editor.addCommand(name, func));
 
-  Obj.each({
-    mceTableRowType: () => getFromSelection(actions.getTableRowType),
-    mceTableCellType: () => getFromSelection(actions.getTableCellType),
-    mceTableColType: () => getFromSelection(actions.getTableColType)
-  }, (func, name) => editor.addQueryValueHandler(name, func))
+  // Obj.each({
+  //   mceTableRowType: () => getFromSelection(actions.getTableRowType),
+  //   mceTableCellType: () => getFromSelection(actions.getTableCellType),
+  //   mceTableColType: () => getFromSelection(actions.getTableColType)
+  // }, (func, name) => editor.addQueryValueHandler(name, func))
 
   // Register dialog commands
   Obj.each({

@@ -5,8 +5,9 @@
  * For commercial licenses see https://www.tiny.cloud/
  */
 
-import { HTMLFormElement, window } from '@ephox/dom-globals';
+import { Element as DomElement, HTMLFormElement, window } from '@ephox/dom-globals';
 import { Arr, Fun, Option, Options, Type } from '@ephox/katamari';
+import { Attr, Element } from '@ephox/sugar';
 import { UrlObject } from '../api/AddOnManager';
 import DOMUtils from '../api/dom/DOMUtils';
 import EventUtils from '../api/dom/EventUtils';
@@ -25,6 +26,8 @@ import WindowManager from '../api/WindowManager';
 import * as NodeType from '../dom/NodeType';
 import * as ErrorReporter from '../ErrorReporter';
 import * as Init from './Init';
+import { StyleSheetLoader } from '../api/dom/StyleSheetLoader';
+import * as StyleSheetLoaderRegistry from '../dom/StyleSheetLoaderRegistry';
 
 const DOM = DOMUtils.DOM;
 
@@ -165,6 +168,12 @@ const loadScripts = function (editor: Editor, suffix: string) {
   });
 };
 
+const getStyleSheetLoader = (element: Element<DomElement>, editorSettings: EditorSettings): StyleSheetLoader =>
+  StyleSheetLoaderRegistry.instance.forElement(element, {
+    contentCssCors: editorSettings.contentCssCors,
+    referrerPolicy: editorSettings.referrerPolicy
+  });
+
 const render = function (editor: Editor) {
   const settings = editor.settings, id = editor.id;
 
@@ -192,6 +201,18 @@ const render = function (editor: Editor) {
     return;
   }
 
+  // snapshot the element we're going to render to
+  const element = Element.fromDom(editor.getElement());
+  const snapshot = Attr.clone(element);
+  editor.on('remove', () => {
+    Arr.eachr(element.dom().attributes, (attr) =>
+      Attr.remove(element, attr.name)
+    );
+    Attr.setAll(element, snapshot);
+  });
+
+  editor.ui.styleSheetLoader = getStyleSheetLoader(element, settings);
+
   // Hide target element early to prevent content flashing
   if (!settings.inline) {
     editor.orgVisibility = editor.getElement().style.visibility;
@@ -200,6 +221,7 @@ const render = function (editor: Editor) {
     editor.inline = true;
   }
 
+  // TODO: Investigate the types here
   const form = (editor.getElement() as HTMLFormElement).form || DOM.getParent(id, 'form');
   if (form) {
     editor.formElement = form;

@@ -6,13 +6,15 @@
  */
 
 import { Types } from '@ephox/bridge';
-import { Element as DomElement, HTMLElement, Node } from '@ephox/dom-globals';
-import { Arr, Obj, Strings, Fun } from '@ephox/katamari';
+import { Element as DomElement, HTMLElement, HTMLTableRowElement, Node } from '@ephox/dom-globals';
+import { Arr, Fun, Obj, Strings } from '@ephox/katamari';
 import { Css, Element } from '@ephox/sugar';
 import DOMUtils from 'tinymce/core/api/dom/DOMUtils';
 import Editor from 'tinymce/core/api/Editor';
 import * as Styles from '../actions/Styles';
 import { getDefaultAttributes, getDefaultStyles, shouldStyleWithCss } from '../api/Settings';
+import { getRowType } from '../core/TableSections';
+import * as Util from '../alien/Util';
 
 /**
  * @class tinymce.table.ui.Helpers
@@ -179,7 +181,7 @@ const extractDataFromSettings = (editor: Editor, hasAdvTableTab: boolean): Table
 
   const advStyle = (hasAdvTableTab ? extractAdvancedStyleData(editor.dom) : {});
 
-  const getCellPaddingCellSpacing  = () => {
+  const getCellPaddingCellSpacing = () => {
     const spacing = Obj.get(style, 'border-spacing').or(Obj.get(attrs, 'cellspacing')).fold( () => ({}), (cellspacing) => ({ cellspacing }));
     const padding = Obj.get(style, 'border-padding').or(Obj.get(attrs, 'cellpadding')).fold( () => ({}), (cellpadding) => ({ cellpadding }));
     return {
@@ -240,13 +242,13 @@ export interface RowData {
   backgroundcolor?: string;
 }
 
-const extractDataFromRowElement = (editor: Editor, elm: HTMLElement, hasAdvancedRowTab: boolean): RowData => {
+const extractDataFromRowElement = (editor: Editor, elm: HTMLTableRowElement, hasAdvancedRowTab: boolean): RowData => {
   const dom = editor.dom;
   return {
     height: dom.getStyle(elm, 'height') || dom.getAttrib(elm, 'height'),
     scope: dom.getAttrib(elm, 'scope'),
     class: dom.getAttrib(elm, 'class', ''),
-    type: elm.parentNode.nodeName.toLowerCase(),
+    type: getRowType(editor, elm),
     align: getHAlignment(editor, elm),
     ...(hasAdvancedRowTab ? extractAdvancedStyles(dom, elm) : {})
   };
@@ -272,7 +274,7 @@ const extractDataFromCellElement = (editor: Editor, elm: HTMLElement, hasAdvance
     width: dom.getStyle(elm, 'width') || dom.getAttrib(elm, 'width'),
     height: dom.getStyle(elm, 'height') || dom.getAttrib(elm, 'height'),
     scope: dom.getAttrib(elm, 'scope'),
-    celltype: elm.nodeName.toLowerCase(),
+    celltype: Util.getNodeName(elm),
     class: dom.getAttrib(elm, 'class', ''),
     halign: getHAlignment(editor, elm),
     valign: getVAlignment(editor, elm),
@@ -281,3 +283,4 @@ const extractDataFromCellElement = (editor: Editor, elm: HTMLElement, hasAdvance
 };
 
 export { buildListItems, extractAdvancedStyles, getSharedValues, getAdvancedTab, extractDataFromTableElement, extractDataFromRowElement, extractDataFromCellElement, extractDataFromSettings };
+

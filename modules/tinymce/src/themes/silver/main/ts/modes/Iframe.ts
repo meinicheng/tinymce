@@ -7,7 +7,8 @@
 
 import { Attachment } from '@ephox/alloy';
 import { Cell, Throttler } from '@ephox/katamari';
-import { Body, DomEvent, Element, Position, Css } from '@ephox/sugar';
+import { PlatformDetection } from '@ephox/sand';
+import { Css, DomEvent, Element, Position, ShadowDom } from '@ephox/sugar';
 import DOMUtils from 'tinymce/core/api/dom/DOMUtils';
 import Editor from 'tinymce/core/api/Editor';
 import * as Events from '../api/Events';
@@ -19,7 +20,6 @@ import OuterContainer from '../ui/general/OuterContainer';
 import { identifyMenus } from '../ui/menus/menubar/Integration';
 import { iframe as loadIframeSkin } from './../ui/skin/Loader';
 import { setToolbar } from './Toolbars';
-import { PlatformDetection } from '@ephox/sand';
 
 const DOM = DOMUtils.DOM;
 const detection = PlatformDetection.detect();
@@ -74,8 +74,11 @@ const render = (editor: Editor, uiComponents: RenderUiComponents, rawUiConfig: R
 
   loadIframeSkin(editor);
 
-  Attachment.attachSystemAfter(Element.fromDom(args.targetNode), uiComponents.mothership);
-  Attachment.attachSystem(Body.body(), uiComponents.uiMothership);
+  const eTargetNode = Element.fromDom(args.targetNode);
+  const uiRoot = ShadowDom.getContentContainer(ShadowDom.getRootNode(eTargetNode));
+
+  Attachment.attachSystemAfter(eTargetNode, uiComponents.mothership);
+  Attachment.attachSystem(uiRoot, uiComponents.uiMothership);
 
   editor.on('PostRender', () => {
     setToolbar(editor, uiComponents, rawUiConfig, backstage);
@@ -137,7 +140,7 @@ const render = (editor: Editor, uiComponents: RenderUiComponents, rawUiConfig: R
 
   return {
     iframeContainer: socket.element().dom(),
-    editorContainer: uiComponents.outerContainer.element().dom(),
+    editorContainer: uiComponents.outerContainer.element().dom()
   };
 };
 
