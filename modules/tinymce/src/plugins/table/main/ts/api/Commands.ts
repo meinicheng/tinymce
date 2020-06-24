@@ -11,7 +11,7 @@ import { CopyCols, CopyRows, TableFill, TableLookup } from '@ephox/snooker';
 import { Element, Insert, Remove, Replication } from '@ephox/sugar';
 import Editor from 'tinymce/core/api/Editor';
 import { insertTableWithDataValidation } from '../actions/InsertTable';
-import { TableActions, BasicTableAction, AdvancedPasteTableAction } from '../actions/TableActions';
+import { AdvancedPasteTableAction, BasicTableAction, TableActions } from '../actions/TableActions';
 import * as Util from '../alien/Util';
 import { Clipboard } from '../core/Clipboard';
 import * as TableTargets from '../queries/TableTargets';
@@ -19,9 +19,9 @@ import { CellSelectionApi } from '../selection/CellSelection';
 import { Selections } from '../selection/Selections';
 import * as TableSelection from '../selection/TableSelection';
 import * as CellDialog from '../ui/CellDialog';
+import { DomModifier } from '../ui/DomModifier';
 import * as RowDialog from '../ui/RowDialog';
 import * as TableDialog from '../ui/TableDialog';
-import { DomModifier } from '../ui/DomModifier';
 
 const registerCommands = (editor: Editor, actions: TableActions, cellSelection: CellSelectionApi, selections: Selections, clipboard: Clipboard) => {
   const isRoot = Util.getIsRoot(editor);
@@ -115,6 +115,27 @@ const registerCommands = (editor: Editor, actions: TableActions, cellSelection: 
     mceTableDelete: eraseTable
   }, (func, name) => editor.addCommand(name, func));
 
+  Obj.each({
+    mceTableCellType: (_ui, args) => actions.setTableCellType(editor, args),
+    mceTableRowType: (_ui, args) => actions.setTableRowType(editor, args)
+  }, (func, name) => editor.addCommand(name, func));
+
+  editor.addCommand('mceTableColumnType', (_ui, args) =>
+    Obj.get(args, 'type').each((type) =>
+      actOnSelection(type === 'th' ? actions.makeColumnHeader : actions.unmakeColumnHeader)
+    ));
+
+  Obj.each({
+    mceTableRowType: () => actions.getTableRowType(editor),
+    mceTableCellType: () => actions.getTableCellType(editor),
+    mceTableColType: () => TableSelection.getSelectionStartCell(editor).bind((cell) =>
+      getTableFromCell(cell).map((table): string => {
+        const targets = TableTargets.forMenu(selections, table, cell);
+        return actions.getTableColType(table, targets);
+      })
+    ).getOr('')
+  }, (func, name) => editor.addQueryValueHandler(name, func));
+
   // Register dialog commands
   Obj.each({
     // AP-101 TableDialog.open renders a slightly different dialog if isNew is true
@@ -158,3 +179,4 @@ const registerCommands = (editor: Editor, actions: TableActions, cellSelection: 
 };
 
 export { registerCommands };
+
